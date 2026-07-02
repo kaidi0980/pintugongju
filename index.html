@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>拼图工具 - 截图拼接与满屏水印工具</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8105064321095321" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div>
+          <p class="eyebrow">Screenshot Collage Tool</p>
+          <h1>拼图工具</h1>
+          <p class="lead">截图拼接、宫格排版、满屏水印，一次在浏览器本地完成。</p>
+        </div>
+        <label class="upload">
+          <input id="fileInput" type="file" accept="image/*" multiple />
+          选择图片
+        </label>
+      </header>
+
+      <section class="layout">
+        <aside class="side">
+          <section class="card">
+            <div class="card-head">
+              <div>
+                <h2>图片顺序</h2>
+                <p>按住缩略图拖到另一张上，会立即交换位置。</p>
+              </div>
+              <button id="clearButton" class="ghost" type="button">清空</button>
+            </div>
+            <div id="thumbGrid" class="thumb-grid empty">
+              <div class="empty">选择图片后会显示在这里</div>
+            </div>
+          </section>
+
+          <section class="card controls">
+            <h2>拼接方式</h2>
+            <div class="segmented">
+              <button class="mode active" type="button" data-layout="grid">网格</button>
+              <button class="mode" type="button" data-layout="vertical">纵向</button>
+              <button class="mode" type="button" data-layout="horizontal">横向</button>
+            </div>
+            <label class="field">
+              <span>网格每行</span>
+              <input id="columnsInput" type="number" min="1" max="12" value="2" />
+            </label>
+            <label class="field">
+              <span>图片间距</span>
+              <input id="gapInput" type="number" min="0" max="80" value="0" />
+            </label>
+            <label class="field">
+              <span>对齐方式</span>
+              <select id="fitInput">
+                <option value="contain" selected>完整显示</option>
+                <option value="cover">裁切铺满</option>
+                <option value="stretch">拉伸铺满</option>
+              </select>
+            </label>
+            <button id="seamlessButton" class="secondary" type="button">无缝拼接</button>
+            <h2>满屏水印</h2>
+            <label class="watermark-text-field">
+              <span>文字</span>
+              <textarea id="watermarkText" rows="3" placeholder="输入水印文字，可回车换行"></textarea>
+            </label>
+            <div class="watermark-grid">
+              <label class="field">
+                <span>密度</span>
+                <select id="watermarkDensity">
+                  <option value="3">3x3</option>
+                  <option value="4" selected>4x4</option>
+                  <option value="5">5x5</option>
+                  <option value="6">6x6</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>颜色</span>
+                <input id="watermarkColor" type="color" value="#dedede" />
+              </label>
+              <label class="field">
+                <span>字号</span>
+                <input id="watermarkSize" type="number" min="12" max="96" value="28" />
+              </label>
+              <label class="field">
+                <span>透明</span>
+                <input id="watermarkOpacity" type="number" min="5" max="100" value="55" />
+              </label>
+            </div>
+            <button id="composeButton" class="primary" type="button" disabled>生成拼图</button>
+          </section>
+        </aside>
+
+        <section class="main-card">
+          <div class="canvas-head">
+            <div>
+              <h2>预览与编辑</h2>
+              <p id="statusText">选择图片后生成拼图。</p>
+            </div>
+            <div class="preview-actions">
+              <span id="previewMeta" class="preview-meta">等待生成</span>
+              <button id="downloadButton" class="download" type="button" disabled>下载 PNG</button>
+            </div>
+          </div>
+
+          <div class="stage">
+            <canvas id="canvas"></canvas>
+            <div id="stageEmpty" class="stage-empty">
+              <strong>拼图会显示在这里</strong>
+              <span>先把顺序排对，再生成拼图；需要水印就先填写水印文字。</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="guide" class="guide">
+        <article class="guide-card">
+          <h2>详细步骤</h2>
+          <ol>
+            <li>点击「选择图片」，选择一张或多张需要处理的图片。</li>
+            <li>在左侧缩略图区域按住拖动，调整图片顺序。网格模式按从左到右、从上到下排列。</li>
+            <li>选择拼接方式：网格、纵向或横向。多宫格截图一般选择「网格」。</li>
+            <li>网格拼接时设置「每行张数」。例如 4 张图填 2，16 张图填 4。</li>
+            <li>如果想要无缝效果，点击「无缝拼接」，工具会自动设置 0 间距和裁切铺满。</li>
+            <li>需要水印时，在「满屏水印」里输入文字，并调整密度、颜色、字号和透明度。</li>
+            <li>点击「生成拼图」预览效果，确认无误后点击「下载 PNG」。</li>
+          </ol>
+        </article>
+
+        <section id="faq" class="faq">
+          <h2>常见问题解答</h2>
+          <article class="faq-card">
+            <h3>为什么拼出来还是对不齐？</h3>
+            <p>通常是因为图片尺寸、缩放比例或截图区域不一致。建议先使用同一设备、同一浏览器缩放比例截图，再选择「网格」并点击「无缝拼接」。</p>
+          </article>
+          <article class="faq-card">
+            <h3>「完整显示」「裁切铺满」「拉伸铺满」有什么区别？</h3>
+            <p>完整显示会保留整张图，可能出现留白；裁切铺满会保持比例并铺满格子，边缘可能裁掉一点；拉伸铺满会强制填满，可能轻微变形。想要无缝，一般选裁切铺满。</p>
+          </article>
+          <article class="faq-card">
+            <h3>上传的图片会不会传到服务器？</h3>
+            <p>不会。当前工具在浏览器本地处理图片，选择、拼接、水印和下载都在你的设备上完成。</p>
+          </article>
+          <article class="faq-card">
+            <h3>什么场景适合加满屏水印？</h3>
+            <p>适合给教程截图、资料截图、产品图、内部文档截图加标识，防止图片被直接搬运。水印透明度建议设置在 35% 到 60% 之间。</p>
+          </article>
+        </section>
+      </section>
+
+      <footer class="footer">
+        <div class="footer-main">
+          <section class="footer-brand">
+            <div class="footer-logo" aria-hidden="true">拼</div>
+            <div>
+              <h2>拼图工具.com</h2>
+              <p>©2026 pintugongju.com 保留所有权利</p>
+            </div>
+          </section>
+
+          <section class="footer-column">
+            <h3>法律条款</h3>
+            <button type="button" data-policy="privacy">隐私政策</button>
+            <button type="button" data-policy="terms">使用条款</button>
+          </section>
+
+          <section class="footer-column">
+            <h3>联系我们</h3>
+            <a href="mailto:kaidikeji@gmail.com">邮箱</a>
+            <a href="https://x.com/kaidkeji" target="_blank" rel="noreferrer">X</a>
+          </section>
+        </div>
+      </footer>
+    </main>
+
+    <dialog id="policyDialog" class="policy-dialog">
+      <div class="policy-box">
+        <div class="policy-head">
+          <h2 id="policyTitle">隐私政策</h2>
+          <button id="policyClose" type="button" aria-label="关闭">×</button>
+        </div>
+        <div id="privacyPolicy" class="policy-content">
+          <p>拼图工具.com 重视用户隐私。本工具主要用于图片拼接、宫格排版和满屏水印处理。</p>
+          <p>用户选择的图片会在本地浏览器中处理，不会主动上传到我们的服务器。生成、预览和下载均在用户设备内完成。</p>
+          <p>网站可能会使用基础访问统计或广告服务，用于了解页面访问情况和维持网站运营。相关第三方服务可能根据其规则使用 Cookie 或类似技术。</p>
+          <p>请勿上传或处理包含他人隐私、敏感证件、商业秘密或未经授权内容的图片。因用户自行处理、下载、传播图片产生的责任由用户自行承担。</p>
+          <p>如对隐私政策有疑问，可通过邮箱 kaidikeji@gmail.com 联系。</p>
+        </div>
+        <div id="termsPolicy" class="policy-content" hidden>
+          <p>欢迎使用拼图工具.com。本工具免费提供图片拼接、排序、满屏水印和下载功能。</p>
+          <p>用户应确保上传和处理的图片拥有合法使用权，不得利用本工具制作、传播违法违规、侵权、欺诈、恶意或侵犯他人权益的内容。</p>
+          <p>本工具按现状提供服务。我们会尽力保证功能稳定，但不承诺在所有设备、浏览器和网络环境下均无错误或不中断。</p>
+          <p>用户使用本工具生成的图片由用户自行保存和使用。因图片内容、用途、传播或商业使用产生的纠纷，与本站无关。</p>
+          <p>本站可能根据功能更新、合规要求或运营需要调整页面、功能和条款。继续使用即视为接受更新后的条款。</p>
+        </div>
+      </div>
+    </dialog>
+
+    <canvas id="workCanvas"></canvas>
+    <script src="./app.js"></script>
+  </body>
+</html>
