@@ -13,13 +13,18 @@
         <div>
           <p class="eyebrow">Screenshot Collage Tool</p>
           <h1>拼图工具</h1>
-          <p class="lead">截图拼接、宫格排版、满屏水印，一次在浏览器本地完成。</p>
+          <p class="lead">截图拼接、宫格排版、满屏水印，支持选择图片或直接粘贴图片。</p>
         </div>
-        <label class="upload">
-          <input id="fileInput" type="file" accept="image/*" multiple />
-          选择图片
-        </label>
       </header>
+
+      <section class="upload-panel" aria-label="选择图片">
+        <h2>选择图片</h2>
+        <label id="uploadZone" class="upload-zone">
+          <input id="fileInput" type="file" accept="image/*" multiple />
+          <span>点击上传、粘贴或拖拽图片到这里</span>
+        </label>
+        <p id="uploadHint" class="upload-hint">未选择图片</p>
+      </section>
 
       <section class="layout">
         <aside class="side">
@@ -100,7 +105,6 @@
             </div>
             <div class="preview-actions">
               <span id="previewMeta" class="preview-meta">等待生成</span>
-              <button id="downloadButton" class="download" type="button" disabled>下载 PNG</button>
             </div>
           </div>
 
@@ -108,9 +112,19 @@
             <canvas id="canvas"></canvas>
             <div id="stageEmpty" class="stage-empty">
               <strong>拼图会显示在这里</strong>
-              <span>先把顺序排对，再生成拼图；需要水印就先填写水印文字。</span>
+              <span>可以选择图片，也可以复制图片后直接粘贴到页面里。</span>
             </div>
           </div>
+          <section class="result-panel" aria-label="导出结果">
+            <label class="filename-field">
+              <span>文件名</span>
+              <input id="filenameInput" type="text" value="pintu.png" />
+            </label>
+            <div class="result-actions">
+              <button id="downloadButton" class="download" type="button" disabled>下载图片</button>
+              <button id="copyButton" class="copy-image" type="button" disabled>复制到剪贴板</button>
+            </div>
+          </section>
         </section>
       </section>
 
@@ -118,13 +132,13 @@
         <article class="guide-card">
           <h2>详细步骤</h2>
           <ol>
-            <li>点击「选择图片」，选择一张或多张需要处理的图片。</li>
+            <li>点击「选择图片」，或复制图片后在页面里直接粘贴，一次添加一张或多张图片。</li>
             <li>在左侧缩略图区域按住拖动，调整图片顺序。网格模式按从左到右、从上到下排列。</li>
             <li>选择拼接方式：网格、纵向或横向。多宫格截图一般选择「网格」。</li>
             <li>网格拼接时设置「每行张数」。例如 4 张图填 2，16 张图填 4。</li>
             <li>如果想要无缝效果，点击「无缝拼接」，工具会自动设置 0 间距和裁切铺满。</li>
             <li>需要水印时，在「满屏水印」里输入文字，并调整密度、颜色、字号和透明度。</li>
-            <li>点击「生成拼图」预览效果，确认无误后点击「下载 PNG」。</li>
+            <li>点击「生成拼图」预览效果，确认无误后在结果区下载图片或复制到剪贴板。</li>
           </ol>
         </article>
 

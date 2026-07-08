@@ -9,10 +9,14 @@ const state = {
 };
 
 const fileInput = document.querySelector("#fileInput");
+const uploadZone = document.querySelector("#uploadZone");
+const uploadHint = document.querySelector("#uploadHint");
 const thumbGrid = document.querySelector("#thumbGrid");
 const clearButton = document.querySelector("#clearButton");
 const composeButton = document.querySelector("#composeButton");
+const copyButton = document.querySelector("#copyButton");
 const downloadButton = document.querySelector("#downloadButton");
+const filenameInput = document.querySelector("#filenameInput");
 const statusText = document.querySelector("#statusText");
 const columnsInput = document.querySelector("#columnsInput");
 const gapInput = document.querySelector("#gapInput");
@@ -35,15 +39,37 @@ const privacyPolicy = document.querySelector("#privacyPolicy");
 const termsPolicy = document.querySelector("#termsPolicy");
 
 fileInput.addEventListener("change", async (event) => {
-  const files = [...event.target.files].filter((file) => file.type.startsWith("image/"));
-  if (!files.length) return;
-  setStatus("正在读取图片...");
-  const loaded = await Promise.all(files.map(loadImage));
-  state.images.push(...loaded);
-  renderThumbs();
-  resetCanvas();
-  setStatus(`已选择 ${state.images.length} 张。先拖动缩略图排顺序。`);
+  await addImageFiles([...event.target.files], "选择");
   fileInput.value = "";
+});
+
+window.addEventListener("paste", async (event) => {
+  const files = getPastedImageFiles(event.clipboardData);
+  if (!files.length) return;
+  event.preventDefault();
+  await addImageFiles(files, "粘贴");
+});
+
+uploadZone.addEventListener("dragenter", (event) => {
+  event.preventDefault();
+  uploadZone.classList.add("dragging");
+});
+
+uploadZone.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  uploadZone.classList.add("dragging");
+});
+
+uploadZone.addEventListener("dragleave", (event) => {
+  if (!uploadZone.contains(event.relatedTarget)) {
+    uploadZone.classList.remove("dragging");
+  }
+});
+
+uploadZone.addEventListener("drop", async (event) => {
+  event.preventDefault();
+  uploadZone.classList.remove("dragging");
+  await addImageFiles([...event.dataTransfer.files], "拖拽");
 });
 
 clearButton.addEventListener("click", () => {
@@ -67,9 +93,27 @@ composeButton.addEventListener("click", () => {
 downloadButton.addEventListener("click", () => {
   if (!state.canvas) return;
   const a = document.createElement("a");
-  a.download = `无缝拼图-${Date.now()}.png`;
+  a.download = getOutputFilename();
   a.href = state.canvas.toDataURL("image/png");
   a.click();
+});
+
+copyButton.addEventListener("click", async () => {
+  if (!state.canvas) return;
+  if (!navigator.clipboard || !window.ClipboardItem) {
+    setStatus("当前浏览器不支持直接复制图片，请使用下载 PNG。");
+    return;
+  }
+
+  try {
+    const blob = await canvasToBlob(state.canvas);
+    await navigator.clipboard.write([
+      new ClipboardItem({ [blob.type]: blob }),
+    ]);
+    setStatus("图片已复制，可以直接粘贴到聊天、文档或编辑器里。");
+  } catch (error) {
+    setStatus("复制失败，请确认浏览器允许剪贴板权限，或使用下载 PNG。");
+  }
 });
 
 modeButtons.forEach((button) => {
@@ -118,6 +162,35 @@ policyDialog.addEventListener("click", (event) => {
   if (event.target === policyDialog) policyDialog.close();
 });
 
+async function addImageFiles(files, source) {
+  const images = files.filter((file) => file?.type?.startsWith("image/"));
+  if (!images.length) return;
+
+  setStatus(`正在读取 ${images.length} 张图片...`);
+
+  try {
+    const loaded = await Promise.all(images.map(loadImage));
+    state.images.push(...loaded);
+    renderThumbs();
+    resetCanvas();
+    setStatus(`已通过${source}添加 ${images.length} 张，共 ${state.images.length} 张。先拖动缩略图排顺序。`);
+  } catch (error) {
+    setStatus("图片读取失败，请换一张图片再试。");
+  }
+}
+
+function getPastedImageFiles(clipboardData) {
+  if (!clipboardData) return [];
+
+  const directFiles = [...clipboardData.files].filter((file) => file.type.startsWith("image/"));
+  if (directFiles.length) return directFiles;
+
+  return [...clipboardData.items]
+    .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+    .map((item) => item.getAsFile())
+    .filter(Boolean);
+}
+
 function loadImage(file, index) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -139,6 +212,7 @@ function loadImage(file, index) {
 function renderThumbs() {
   composeButton.disabled = state.images.length < 1;
   thumbGrid.classList.toggle("empty", state.images.length === 0);
+  uploadHint.textContent = state.images.length ? `已选择 ${state.images.length} 张图片` : "未选择图片";
 
   if (!state.images.length) {
     thumbGrid.innerHTML = '<div class="empty">选择图片后会显示在这里</div>';
@@ -173,6 +247,17 @@ function renderThumbs() {
       setStatus("图片已删除，请重新生成拼图。");
     });
   });
+}
+
+function getOutputFilename() {
+  const rawName = filenameInput.value.trim();
+  const safeName = rawName
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+  const fallback = `pintu-${Date.now()}.png`;
+  if (!safeName) return fallback;
+  return safeName.toLowerCase().endsWith(".png") ? safeName : `${safeName}.png`;
 }
 
 function onThumbDown(event) {
@@ -322,6 +407,7 @@ function drawPreview() {
   canvas.getContext("2d").drawImage(state.canvas, 0, 0);
   canvas.style.display = "block";
   stageEmpty.style.display = "none";
+  copyButton.disabled = false;
   downloadButton.disabled = false;
   previewMeta.textContent = `${state.canvas.width} × ${state.canvas.height}px`;
   resizePreviewCanvas();
@@ -329,6 +415,7 @@ function drawPreview() {
 
 function resetCanvas() {
   state.canvas = null;
+  copyButton.disabled = true;
   downloadButton.disabled = true;
   previewMeta.textContent = "等待生成";
   canvas.style.display = "none";
@@ -336,6 +423,18 @@ function resetCanvas() {
   canvas.style.height = "";
   stageEmpty.style.display = "grid";
   canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function canvasToBlob(sourceCanvas) {
+  return new Promise((resolve, reject) => {
+    sourceCanvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+        return;
+      }
+      reject(new Error("Canvas export failed"));
+    }, "image/png");
+  });
 }
 
 function resizePreviewCanvas() {
